@@ -10,9 +10,8 @@ pipeline {
 
         stage('Build Maven Project') {
             steps {
-                
                 sh 'chmod +x mvnw'
-                sh './mvnw clean package'
+                sh './mvnw clean package -DskipTests'
             }
         }
 
@@ -26,6 +25,12 @@ pipeline {
             steps {
                 sh 'kubectl apply -f demo-app.yaml'
             }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker images' 
         }
     }
 }
