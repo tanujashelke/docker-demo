@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = 'demo-app'
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -10,27 +14,26 @@ pipeline {
 
         stage('Build Maven Project') {
             steps {
-                sh 'chmod +x mvnw'
-                sh './mvnw clean package -DskipTests'
+                bat 'mvnw clean package -DskipTests'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t demo-app:latest .'
+                bat 'docker build -t demo-app:latest .'
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f demo-app.yaml'
+                bat 'kubectl apply -f demo-app.yaml'
             }
         }
     }
 
     post {
         always {
-            sh 'docker images' 
+            bat 'docker images'
         }
     }
 }
