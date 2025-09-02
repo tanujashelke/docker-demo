@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'demo-app'
-        IMAGE_TAG = "${env.BUILD_NUMBER}" 
+        IMAGE_NAME   = 'demo-app'
+        IMAGE_TAG    = "${env.BUILD_NUMBER}" 
         KUBE_MANIFEST = "demo-app.yaml"
     }
 
@@ -15,15 +15,17 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                echo "Cloning Git repository..."
+                echo " Cleaning and cloning Git repository..."
+                
+                deleteDir()
                 git branch: 'main', url: 'https://github.com/tanujashelke/docker-demo.git'
             }
         }
 
         stage('Build Maven Project') {
             steps {
-                echo "Building Spring Boot project..."
-                sh 'chmod +x mvnw'              //  make mvnw executable
+                echo " Building Spring Boot project..."
+                sh 'chmod +x mvnw'              // make mvnw executable
                 sh './mvnw clean package -DskipTests'
             }
         }
@@ -39,12 +41,18 @@ pipeline {
             steps {
                 script {
                     try {
-                        echo "Deploying to Kubernetes..."
+                        echo " Deploying to Kubernetes..."
+                        
+                       
                         sh "sed -i 's|image: ${IMAGE_NAME}:latest|image: ${IMAGE_NAME}:${IMAGE_TAG}|g' ${KUBE_MANIFEST}"
+
+                       
                         sh "kubectl apply -f ${KUBE_MANIFEST}"
+
+                        
                         sh "kubectl rollout status deployment/${IMAGE_NAME}-deployment --timeout=120s"
                     } catch (err) {
-                        echo "Deployment failed! Rolling back..."
+                        echo " Deployment failed! Rolling back..."
                         sh "kubectl rollout undo deployment/${IMAGE_NAME}-deployment"
                         error "Deployment failed, rollback executed."
                     }
