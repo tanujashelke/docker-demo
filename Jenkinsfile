@@ -23,6 +23,7 @@ pipeline {
         stage('Build Maven Project') {
             steps {
                 echo "Building Spring Boot project..."
+                sh 'chmod +x mvnw'              //  make mvnw executable
                 sh './mvnw clean package -DskipTests'
             }
         }
@@ -39,14 +40,8 @@ pipeline {
                 script {
                     try {
                         echo "Deploying to Kubernetes..."
-                        
-                       
                         sh "sed -i 's|image: ${IMAGE_NAME}:latest|image: ${IMAGE_NAME}:${IMAGE_TAG}|g' ${KUBE_MANIFEST}"
-                        
-                
                         sh "kubectl apply -f ${KUBE_MANIFEST}"
-                        
-                        
                         sh "kubectl rollout status deployment/${IMAGE_NAME}-deployment --timeout=120s"
                     } catch (err) {
                         echo "Deployment failed! Rolling back..."
@@ -60,13 +55,13 @@ pipeline {
 
     post {
         success {
-            echo "Build and deployment succeeded! Image: ${IMAGE_NAME}:${IMAGE_TAG}"
+            echo " Build and deployment succeeded! Image: ${IMAGE_NAME}:${IMAGE_TAG}"
         }
         failure {
-            echo "Build or deployment failed."
+            echo " Build or deployment failed."
         }
         always {
-            echo "Cleaning up local Docker images..."
+            echo " Cleaning up local Docker images..."
             sh "docker image prune -f"
         }
     }
